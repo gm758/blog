@@ -97,9 +97,6 @@ class Entry(flask_db.Model):
             maxwidth=app.config['SITE_WIDTH'])
         return Markup(oembed_content)
 
-
-
-
 class FTSEntry(FTSModel):
     entry_id = IntegerField(Entry)
     content = TextField()

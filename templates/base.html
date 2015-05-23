@@ -24,13 +24,14 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="{{ url_for('index') }}">Blog</a>
+          <a class="navbar-brand" href="{{ url_for('index') }}">Griffin Michl</a>
         </div>
         <div class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
+							<li><a href="{{ url_for('detail', slug="about") }}">About Me</a></li>
             {% if session.logged_in %}
               <li><a href="{{ url_for('drafts') }}">Drafts</a></li>
-              <li><a href="{{ url_for('create') }}">Create Entry</a></li>
+              <li><a href="{{ url_for('create') }}">Create</a></li>
               <li><a href="{{ url_for('logout') }}">Log out</a></li>
             {% endif %}
             {% block extra_header %}{% endblock %}
@@ -64,7 +65,7 @@
 
       <footer>
         <hr />
-        <p>Blog, &copy; 2015</p>
+        <p>Griffin Michl &copy; 2015</p>
       </footer>
     </div>
   </body>
