@@ -97,12 +97,22 @@ class Entry(flask_db.Model):
             maxwidth=app.config['SITE_WIDTH'])
         return Markup(oembed_content)
 
+    def comments(self):
+        return User.select().join(Comment).where(Comment.post == self).order_by(Comment.timestamp.desc())
+
 class FTSEntry(FTSModel):
     entry_id = IntegerField(Entry)
     content = TextField()
 
     class Meta:
         database = database
+
+class Comment(flask_db.Model):
+    name = CharField()
+    content = TextField()
+    timestamp = DateTimeField(default=datetime.datetime.now, index=True)
+    post = ForeignKeyField(Entry)
+
 
 def login_required(fn):
     @functools.wraps(fn)
@@ -167,14 +177,26 @@ def create():
             flash('Title and content are required.', 'danger')
     return render_template('create.html')
 
-@app.route('/<slug>/')
+@app.route('/<slug>/', methods=['GET','POST'])
 def detail(slug):
     if session.get('logged_in'):
         query = Entry.select()
     else:
         query = Entry.public()
     entry = get_object_or_404(query, Entry.slug == slug)
-    return render_template('detail.html', entry=entry)
+    #adding comments to posts
+    if request.method  == 'POST':
+        if request.form.get('comment'):
+            comment = Comment.create(
+                name=request.form['name']
+                content=request.form['comment'],
+                post=entry)
+            flash('Comment posted successfully', 'success')
+            return redirect(url_for('detail', slug=entry.slug)
+        else:
+            flash('Your comment is empty')
+
+    return render_template('detail.html', entry=entry, comments=entry.comments())
 
 @app.route('/<slug>/edit/', methods=['GET', 'POST'])
 @login_required
