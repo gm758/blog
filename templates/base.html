@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
   <head>
-    <title>Blog</title>
+    <title>Griffin Michl</title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -30,11 +30,16 @@
           <ul class="nav navbar-nav">
 							<li><a href="{{ url_for('detail', slug="about") }}">About Me</a></li>
             {% if session.logged_in %}
-              <li><a href="{{ url_for('drafts') }}">Drafts</a></li>
-              <li><a href="{{ url_for('create') }}">Create</a></li>
-              <li><a href="{{ url_for('logout') }}">Log out</a></li>
+							<li class="dropdown">
+								<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Controls<span class="caret"></span></a>
+								<ul class="dropdown-menu" role="menu">
+									<li><a href="{{ url_for('comments') }}">Comments</a></li>
+									<li><a href="{{ url_for('drafts') }}">Drafts</a></li>
+				          <li><a href="{{ url_for('create') }}">Create</a></li>
+									{% block extra_header %}{% endblock %}
+									<li><a href="{{ url_for('logout') }}">Log out</a></li>
+								</ul>
             {% endif %}
-            {% block extra_header %}{% endblock %}
           </ul>
           {% block search_bar %}
             <form action="{{ url_for('index') }}" class="navbar-form navbar-right" id="search-form" method="get" role="search">

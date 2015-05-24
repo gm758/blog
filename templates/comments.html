@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}{{ entry.title }}{% endblock %}
+
+{% block content %}
+	<h3>Comments</h3>
+	<form action="{{ url_for('comments') }}" method="post">
+	{% for comment in object_list %}
+		<div class="form-group">
+			<div class="row">
+				<div class="col-sm-6">{{ comment.name }} | {{ comment.timestamp.strftime('%m/%d/%Y at %G:%I%p') }}</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-6">{{ comment.content }}</div>
+			</div>
+			<div class="radio">
+				<label>
+					<input type="radio" name="{{ comment.id }}" value="1"> Approve
+				</label>
+			</div>
+			<div class="radio">
+				<label>
+					<input type="radio" name="{{ comment.id }}" value="0"> Reject
+				</label>
+			</div>
+		</div>
+	{% endfor %}
+	<div class="row">
+		<button class="btn btn-primary" type="submit">Save</button>
+	</div>
+	</form>
+{% endblock %}

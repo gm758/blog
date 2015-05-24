@@ -97,9 +97,6 @@ class Entry(flask_db.Model):
             maxwidth=app.config['SITE_WIDTH'])
         return Markup(oembed_content)
 
-    def comments(self):
-        return User.select().join(Comment).where(Comment.post == self).order_by(Comment.timestamp.desc())
-
 class FTSEntry(FTSModel):
     entry_id = IntegerField(Entry)
     content = TextField()
@@ -110,8 +107,9 @@ class FTSEntry(FTSModel):
 class Comment(flask_db.Model):
     name = CharField()
     content = TextField()
+    approved = BooleanField(index=True)
     timestamp = DateTimeField(default=datetime.datetime.now, index=True)
-    post = ForeignKeyField(Entry)
+    post = ForeignKeyField(Entry, related_name='comments')
 
 
 def login_required(fn):
@@ -159,6 +157,20 @@ def drafts():
     query = Entry.drafts().order_by(Entry.timestamp.desc())
     return object_list('index.html', query)
 
+@app.route('/comments/', methods=['GET','POST'])
+@login_required
+def comments():
+    query = Comment.select().where(Comment.approved == False).order_by(Comment.timestamp.desc()) 
+    if request.method == 'POST':
+        f = request.form
+        for key in f.keys():
+            if int(f[key]):
+                Comment.update(approved=True).where(Comment.id == int(key)).execute()
+            else:
+                Comment.delete().where(Comment.id == int(key)).execute()
+    return object_list('comments.html', query)
+
+
 @app.route('/create/', methods=['GET','POST'])
 @login_required
 def create():
@@ -184,19 +196,20 @@ def detail(slug):
     else:
         query = Entry.public()
     entry = get_object_or_404(query, Entry.slug == slug)
+    comments = Comment.select().where(Comment.approved == True, Comment.post == entry)
     #adding comments to posts
     if request.method  == 'POST':
         if request.form.get('comment'):
             comment = Comment.create(
-                name=request.form['name']
+                name=request.form['name'],
                 content=request.form['comment'],
+                approved=False,
                 post=entry)
             flash('Comment posted successfully', 'success')
-            return redirect(url_for('detail', slug=entry.slug)
+            return redirect(url_for('detail', slug=entry.slug))
         else:
             flash('Your comment is empty')
-
-    return render_template('detail.html', entry=entry, comments=entry.comments())
+    return render_template('detail.html', entry=entry, comments=comments)
 
 @app.route('/<slug>/edit/', methods=['GET', 'POST'])
 @login_required
@@ -231,7 +244,7 @@ def not_found(exc):
     return Response('<h3>Page not found</h3>'), 404
 
 def main():
-    database.create_tables([Entry, FTSEntry], safe=True)
+    database.create_tables([Entry, FTSEntry, Comment], safe=True)
     app.run(debug=True)
 
 if __name__ == '__main__':
