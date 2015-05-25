@@ -110,7 +110,12 @@ class Comment(flask_db.Model):
     approved = BooleanField(index=True)
     timestamp = DateTimeField(default=datetime.datetime.now, index=True)
     post = ForeignKeyField(Entry, related_name='comments')
-
+#In the future, it may be worthwhile to split this into two tables
+#A table containing only tag CharField
+#and a table containing relationships between comments and Tags
+class Tag(flask_db.Model):
+    tag = CharField()
+    post = ForeignKeyField(Entry, related_name="tags")
 
 def login_required(fn):
     @functools.wraps(fn)
@@ -146,10 +151,21 @@ def logout():
 def index():
     search_query = request.args.get('q')
     if search_query:
+        #needs to be updated to handle tags
         query = Entry.search(search_query)
     else:
-        query = Entry.public().order_by(Entry.timestamp.desc())
+        query = Entry.select(Entry, Tag).join(Tag, JOIN.LEFT_OUTER).where(Entry.published == True).aggregate_rows().order_by(Entry.timestamp.desc())
     return object_list('index.html', query, search=search_query)
+
+@app.route('/tags/')
+def tags():
+    query = Tag.select(Tag, fn.Count().alias('count')).group_by(Tag.tag).order_by(Tag.tag)
+    return object_list('tags.html', query)
+
+@app.route('/tags/<tag>/')
+def tag_search(tag):
+    query = Entry.select(Entry, Tag).join(Tag).where(Entry.published == True).aggregate_rows().order_by(Entry.timestamp.desc())
+    return object_list('tagsearch.html', query, tag=tag)
 
 @app.route('/drafts/')
 @login_required
@@ -164,11 +180,13 @@ def comments():
     if request.method == 'POST':
         f = request.form
         for key in f.keys():
+            #In the future, I'd like to classify these as spam/ham rather than just approve/delete
             if int(f[key]):
                 Comment.update(approved=True).where(Comment.id == int(key)).execute()
             else:
                 Comment.delete().where(Comment.id == int(key)).execute()
     return object_list('comments.html', query)
+
 
 
 @app.route('/create/', methods=['GET','POST'])
@@ -180,6 +198,10 @@ def create():
                 title=request.form['title'],
                 content=request.form['content'],
                 published=request.form.get('published') or False)
+            tags = request.form['tags'].split()
+            for tag in tags:
+                Tag.create(tag=tag, post=entry)
+
             flash('Entry created successfully', 'success')
             if entry.published:
                 return redirect(url_for('detail', slug=entry.slug))
@@ -196,6 +218,7 @@ def detail(slug):
     else:
         query = Entry.public()
     entry = get_object_or_404(query, Entry.slug == slug)
+    tags = Tag.select().where(Tag.post == entry)
     comments = Comment.select().where(Comment.approved == True, Comment.post == entry)
     #adding comments to posts
     if request.method  == 'POST':
@@ -209,7 +232,7 @@ def detail(slug):
             return redirect(url_for('detail', slug=entry.slug))
         else:
             flash('Your comment is empty')
-    return render_template('detail.html', entry=entry, comments=comments)
+    return render_template('detail.html', entry=entry, tags = tags, comments=comments)
 
 @app.route('/<slug>/edit/', methods=['GET', 'POST'])
 @login_required
@@ -244,7 +267,7 @@ def not_found(exc):
     return Response('<h3>Page not found</h3>'), 404
 
 def main():
-    database.create_tables([Entry, FTSEntry, Comment], safe=True)
+    database.create_tables([Entry, FTSEntry, Comment, Tag], safe=True)
     app.run(debug=True)
 
 if __name__ == '__main__':

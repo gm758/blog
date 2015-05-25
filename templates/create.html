@@ -13,11 +13,17 @@
       </div>
     </div>
     <div class="form-group">
-      <label for="Content" class="col-sm-2 control-label">Content</label>
+      <label for="content" class="col-sm-2 control-label">Content</label>
       <div class="col-sm-10">
         <textarea class="form-control" id="content" name="content" style="height: 300px;">{{ request.form.get('content', '') }}</textarea>
       </div>
     </div>
+		<div class="form-group">
+			<label for="tags" class="col-sm-2 control-label">Tags</label>
+			<div class="col-sm-10">
+				<input type="text" class="form-control" id="tags" name="tags" value="{{ request.form.get('tags', '') }}">
+			</div>
+		</div>
     <div class="form-group">
       <div class="col-sm-offset-2 col-sm-10">
         <div class="checkbox">

@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block content %}
-  <p>Created {{ entry.timestamp.strftime('%m/%d/%Y at %G:%I%p') }}</p>
+  <p>Created {{ entry.timestamp.strftime('%m/%d/%Y at %G:%I%p') }} / {% for tag in tags %}{{ tag.tag }} {% endfor %}</p>
   {{ entry.html_content }}
 {% endblock %}
 {% block comments %}

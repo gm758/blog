@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ entry.title }}{% endblock %}
+{% block title %}Comments{% endblock %}
 
 {% block content %}
 	<h3>Comments</h3>
@@ -29,4 +29,5 @@
 		<button class="btn btn-primary" type="submit">Save</button>
 	</div>
 	</form>
+	{% include "includes/pagination.html %}
 {% endblock %}
