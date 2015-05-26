@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}Blog entries{% endblock %}
+{% block title %}{{ title }}{% endblock %}
 
-{% block content_title %}{% if search %}Search "{{ search }}"{% else %}Blog entries{% endif %}{% endblock %}
+{% block content_title %}{% if search %}Search "{{ search }}"{% else %}{{ title }}{% endif %}{% endblock %}
 
 {% block content %}
   {% for entry in object_list %}
@@ -14,7 +14,7 @@
         {{ entry.title }}
       </a>
     </h3>
-    <p>Created {{ entry.timestamp.strftime('%m/%d/%Y at %G:%I%p') }} / {% for tag in entry.tags %}<a href="{{ url_for('tag_search', tag=tag.tag) }}">{{ tag.tag }}</a> {% endfor %}</p>
+    <p>Created {{ entry.timestamp.strftime('%m/%d/%Y at %G:%I%p') }} / {% for tag in entry.tags %}<a href="{{ url_for('tag_search', tag=tag.tag) }}">{{ tag.tag }}</a> {% endfor %} / Comments ({{ entry.count }})</p>
   {% endfor %}
   {% include "includes/pagination.html" %}
 {% endblock %}

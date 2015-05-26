@@ -3,6 +3,7 @@ import functools
 import os
 import re
 import urllib
+from hashlib import md5
 
 from flask import (Flask, abort, flash, Markup, redirect, render_template,
                    request, Response, session, url_for)
@@ -58,8 +59,20 @@ class Entry(flask_db.Model):
         fts_entry.save(force_insert=force_insert)
 
     @classmethod
+    def _query_all(cls):
+        return (Entry.select(Entry, Tag, fn.Count(fn.Distinct(Comment.id)).alias('count')).join(Tag, JOIN.LEFT_OUTER).switch(Entry).join(Comment, JOIN.LEFT_OUTER))
+
+    @classmethod
     def public(cls):
-        return Entry.select().where(Entry.published == True)
+        return cls._query_all().where(Entry.published == True).group_by(Entry.id)
+
+    @classmethod
+    def tagsearch(cls, tag):
+        return cls._query_all().where(Entry.published == True, Tag.tag == tag).group_by(Entry.id)
+
+    @classmethod
+    def drafts(cls):
+        return cls._query_all().where(Entry.published == False).group_by(Entry.id)
 
     @classmethod
     def search(cls, query):
@@ -80,10 +93,6 @@ class Entry(flask_db.Model):
                     (Entry.published == True) &
                     (FTSEntry.match(search))
                 .order_by(SQL('score').desc())))
-
-    @classmethod
-    def drafts(cls):
-        return Entry.select().where(Entry.published == False)
 
     @property
     def html_content(self):
@@ -106,10 +115,15 @@ class FTSEntry(FTSModel):
 
 class Comment(flask_db.Model):
     name = CharField()
+    email = CharField()
     content = TextField()
     approved = BooleanField(index=True)
     timestamp = DateTimeField(default=datetime.datetime.now, index=True)
     post = ForeignKeyField(Entry, related_name='comments')
+
+    def avatar(self, size):
+        return 'http://www.gravatar.com/avatar/%s?d=mm&s=%d' % (md5(self.email.encode('utf-8')).hexdigest(), size)
+
 #In the future, it may be worthwhile to split this into two tables
 #A table containing only tag CharField
 #and a table containing relationships between comments and Tags
@@ -151,27 +165,27 @@ def logout():
 def index():
     search_query = request.args.get('q')
     if search_query:
-        #needs to be updated to handle tags
+        #needs to be updated to handle tags, comments
         query = Entry.search(search_query)
     else:
-        query = Entry.select(Entry, Tag).join(Tag, JOIN.LEFT_OUTER).where(Entry.published == True).aggregate_rows().order_by(Entry.timestamp.desc())
-    return object_list('index.html', query, search=search_query)
+        query = Entry.public().order_by(Entry.timestamp.desc())
+    return object_list('index.html', query, search=search_query, title="Blog Entries")
 
 @app.route('/tags/')
 def tags():
     query = Tag.select(Tag, fn.Count().alias('count')).group_by(Tag.tag).order_by(Tag.tag)
-    return object_list('tags.html', query)
+    return object_list('index.html', query)
 
 @app.route('/tags/<tag>/')
 def tag_search(tag):
-    query = Entry.select(Entry, Tag).join(Tag).where(Entry.published == True).aggregate_rows().order_by(Entry.timestamp.desc())
-    return object_list('tagsearch.html', query, tag=tag)
+    query = Entry.tagsearch(tag).order_by(Entry.timestamp.desc())
+    return object_list('index.html', query, title="Entries tagged with %s" % tag)
 
 @app.route('/drafts/')
 @login_required
 def drafts():
     query = Entry.drafts().order_by(Entry.timestamp.desc())
-    return object_list('index.html', query)
+    return object_list('index.html', query, title="Drafts")
 
 @app.route('/comments/', methods=['GET','POST'])
 @login_required
@@ -222,9 +236,11 @@ def detail(slug):
     comments = Comment.select().where(Comment.approved == True, Comment.post == entry)
     #adding comments to posts
     if request.method  == 'POST':
+        #add name, email and content requirements
         if request.form.get('comment'):
             comment = Comment.create(
                 name=request.form['name'],
+                email=request.form['email'],
                 content=request.form['comment'],
                 approved=False,
                 post=entry)

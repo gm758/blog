@@ -11,27 +11,36 @@
 {% endblock %}
 
 {% block content %}
-  <p>Created {{ entry.timestamp.strftime('%m/%d/%Y at %G:%I%p') }} / {% for tag in tags %}{{ tag.tag }} {% endfor %}</p>
+  <p>Created {{ entry.timestamp.strftime('%m/%d/%Y at %G:%I%p') }} / {% for tag in tags %}<a href="{{ url_for('tag_search', tag=tag.tag) }}">{{ tag.tag }}</a> {% endfor %}</p>
   {{ entry.html_content }}
 {% endblock %}
 {% block comments %}
-	<div>
 	<h3>Comments ({{ comments.count()  }})</h3>
 	{% for comment in comments %}
-		<div class="row">
-		<div class="col-sm-6" style="border-top:1px solid grey;">{{ comment.name }} | {{ comment.timestamp.strftime('%m/%d/%Y at %G:%I%p') }}</div>
-		</div>
-		<div class="row">
-		<div class="col-sm-6">{{ comment.content }}</div>
+		<div class="media">
+			<a class="pull-left" href="#">
+				<img class="media-object" src="{{ comment.avatar(64) }}" alt="Media Object">
+			</a>
+			<div class="media-body">
+				<h4 class="media-heading">
+				{{ comment.name }} | {{ comment.timestamp.strftime('%m/%d/%Y at %G:%I%p') }}</div>
+				</h4>
+				{{ comment.content }}
 		</div>
 	{% endfor %}
-	</div>
+
 	<h3>Leave a Comment</h3>
 	<form action="{{ url_for('detail', slug=entry.slug) }}" class="form-horizontal"  method="post">
 	<div class="form-group">
 		<label for="name" class="col-sm-2 content-control">Name</label>
 		<div class="col-sm-4">
 			<input class="form-control" id="name" name="name" type="text" value="">
+		</div>
+	</div>
+	<div class="form-group">
+		<label for="email" class="col-sm-2 content-control">Email</label>
+		<div class="col-sm-4">
+			<input class="form-control" id="email" name="email" type="text" value="">
 		</div>
 	</div>
 	<div class="form-group">
