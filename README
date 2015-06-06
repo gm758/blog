@@ -2,6 +2,7 @@ Griffin's personal blog/website built using Flask, Peewee, and Bootstrap
 
 Current Bugs:
 * Comment count on homepage wrong (includes unapproved comments)
+* Search function not working properly
 
 Future Updates:
 * Contact me
