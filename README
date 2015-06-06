@@ -1,8 +1,7 @@
 Griffin's personal blog/website built using Flask, Peewee, and Bootstrap
 
 Current Bugs:
-* Comments not rendering
-* Drafts not publishing
+* Comment count on homepage wrong (includes unapproved comments)
 
 Future Updates:
 * Contact me

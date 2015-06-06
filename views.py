@@ -144,6 +144,9 @@ def edit(slug):
             entry.title = request.form['title']
             entry.content = request.form['content']
             entry.published = request.form.get('published') or False
+            Entry.update(title = entry.title,
+                         content = entry.content,
+                         published = entry.published).where(Entry.slug == slug).execute()
 
             flash('Entry saved successfully.', 'success')
             if entry.published:
