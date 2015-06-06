@@ -15,6 +15,8 @@ from micawber.cache import Cache as OEmbedCache
 from peewee import *
 from playhouse.flask_utils import FlaskDB, get_object_or_404, object_list
 from playhouse.sqlite_ext import *
+from wekzeug.security import generate_password_hash, check_password_hash
+
 
 ADMIN_PASSWORD = 'password'
 APP_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -31,6 +33,20 @@ flask_db = FlaskDB(app)
 database = flask_db.database
 
 oembed_providers = bootstrap_basic(OEmbedCache())
+
+class User(flask_db.Model):
+    username = CharField()
+    password = CharField()
+    
+    def save(self, *args, **kwargs):
+        self.password = generate_password_hash(self.password)
+        ret = super(User, self).save(*args, **kwargs)
+        return ret
+
+    def verify(self, username, password):
+        pw_hash = User.select(User.password).where(User.username == username)
+        return check_password_hash(pw_hash, password)
+    
 
 class Entry(flask_db.Model):
     title = CharField()
@@ -283,7 +299,7 @@ def not_found(exc):
     return Response('<h3>Page not found</h3>'), 404
 
 def main():
-    database.create_tables([Entry, FTSEntry, Comment, Tag], safe=True)
+    database.create_tables([User, Entry, FTSEntry, Comment, Tag], safe=True)
     app.run(debug=True)
 
 if __name__ == '__main__':
