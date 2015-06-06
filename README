@@ -1,0 +1,12 @@
+Griffin's personal blog/website built using Flask, Peewee, and Bootstrap
+
+Current Bugs:
+* Comments not rendering
+* Drafts not publishing
+
+Future Updates:
+* Contact me
+* Analytics
+* Spam Detection (self-made for practice)
+* Password hashing (implement self-made version)
+* RESTful API
