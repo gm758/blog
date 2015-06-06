@@ -15,10 +15,9 @@ from micawber.cache import Cache as OEmbedCache
 from peewee import *
 from playhouse.flask_utils import FlaskDB, get_object_or_404, object_list
 from playhouse.sqlite_ext import *
-from wekzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
-ADMIN_PASSWORD = 'password'
 APP_DIR = os.path.dirname(os.path.realpath(__file__))
 DATABASE = 'sqliteext:///%s' % os.path.join(APP_DIR, 'blog.db')
 DEBUG = False
@@ -42,8 +41,9 @@ class User(flask_db.Model):
         self.password = generate_password_hash(self.password)
         ret = super(User, self).save(*args, **kwargs)
         return ret
-
-    def verify(self, username, password):
+    
+    @classmethod
+    def verify(cls, username, password):
         pw_hash = User.select(User.password).where(User.username == username)
         return check_password_hash(pw_hash, password)
     
@@ -159,8 +159,9 @@ def login_required(fn):
 def login():
     next_url = request.args.get('next') or request.form.get('next')
     if request.method == 'POST' and request.form.get('password'):
+        username = request.form.get('username')
         password = request.form.get('password')
-        if password == app.config['ADMIN_PASSWORD']:
+        if User.verify(username, password):
             session['logged_in'] = True
             session.permanent = True
             flash('You are now logged in.', 'success')
